@@ -1,0 +1,21 @@
+# Everything in requirements.txt plus:
+numpy
+scipy
+matplotlib
+pandas
+tqdm
+requests
+rasterio
+pyproj
+scikit-learn
+scikit-image
+
+# Deep learning
+torch
+torchvision
+segmentation-models-pytorch
+albumentations
+tensorboard
+
+# Config
+pyyaml

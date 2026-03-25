@@ -1,0 +1,24 @@
+name: titan-sar
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - numpy
+  - scipy
+  - matplotlib
+  - jupyter
+  - pandas
+  - rasterio
+  - pyproj
+  - gdal
+  - shapely
+  - fiona
+  - scikit-learn
+  - scikit-image
+  - pip
+  - pip:
+    - planetaryimage
+    - pvl
+    - requests
+    - tqdm

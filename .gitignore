@@ -1,0 +1,36 @@
+# Data (tracked via MANIFEST.json, not git)
+data/raw/
+data/processed/
+data/predictions/
+models/*.pth
+models/*.joblib
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.eggs/
+dist/
+build/
+*.so
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Environment
+.env
+*.egg
+.venv/
+venv/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# TensorBoard
+runs/

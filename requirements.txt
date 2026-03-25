@@ -1,0 +1,23 @@
+# Core
+numpy
+scipy
+matplotlib
+jupyter
+pandas
+tqdm
+requests
+
+# Geospatial
+rasterio
+pyproj
+GDAL
+shapely
+fiona
+
+# ML (CPU)
+scikit-learn
+scikit-image
+
+# Planetary data
+planetaryimage
+pvl
