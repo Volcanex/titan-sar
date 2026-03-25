@@ -1,0 +1,203 @@
+{
+  "model": "RandomForest_baseline_v1",
+  "n_estimators": 500,
+  "features": [
+    "mean",
+    "std",
+    "median",
+    "skewness",
+    "kurtosis",
+    "p10",
+    "p90",
+    "contrast_d1",
+    "contrast_d3",
+    "contrast_d5",
+    "dissimilarity_d1",
+    "dissimilarity_d3",
+    "dissimilarity_d5",
+    "homogeneity_d1",
+    "homogeneity_d3",
+    "homogeneity_d5",
+    "energy_d1",
+    "energy_d3",
+    "energy_d5",
+    "correlation_d1",
+    "correlation_d3",
+    "correlation_d5",
+    "ASM_d1",
+    "ASM_d3",
+    "ASM_d5"
+  ],
+  "validation": {
+    "overall_accuracy": 0.6983418367346939,
+    "mean_iou": 0.35434914985809457,
+    "per_class_iou": {
+      "plains": 0.6625097427903351,
+      "dunes": 0.2669172932330827,
+      "hummocky": 0.09547738693467336,
+      "lakes_seas": 0.6666666666666666,
+      "labyrinth": 0.43452380952380953,
+      "craters": 0.0
+    },
+    "per_class_f1": {
+      "plains": 0.7969995311767464,
+      "dunes": 0.42136498516320475,
+      "hummocky": 0.1743119266055046,
+      "lakes_seas": 0.8,
+      "labyrinth": 0.6058091286307054,
+      "craters": 0.0
+    },
+    "per_class_precision": {
+      "plains": 0.7769652650822669,
+      "dunes": 0.4303030303030303,
+      "hummocky": 0.24050632911392406,
+      "lakes_seas": 0.7256637168141593,
+      "labyrinth": 0.6239316239316239,
+      "craters": 0.0
+    },
+    "per_class_recall": {
+      "plains": 0.8180943214629451,
+      "dunes": 0.4127906976744186,
+      "hummocky": 0.1366906474820144,
+      "lakes_seas": 0.8913043478260869,
+      "labyrinth": 0.5887096774193549,
+      "craters": 0.0
+    },
+    "confusion_matrix": [
+      [
+        850,
+        83,
+        43,
+        24,
+        39,
+        0
+      ],
+      [
+        83,
+        71,
+        15,
+        3,
+        0,
+        0
+      ],
+      [
+        102,
+        11,
+        19,
+        4,
+        3,
+        0
+      ],
+      [
+        8,
+        0,
+        0,
+        82,
+        2,
+        0
+      ],
+      [
+        49,
+        0,
+        2,
+        0,
+        73,
+        0
+      ],
+      [
+        2,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    ]
+  },
+  "test": {
+    "overall_accuracy": 0.7010309278350515,
+    "mean_iou": 0.2932011796251573,
+    "per_class_iou": {
+      "plains": 0.6919917864476386,
+      "dunes": 0.14049586776859505,
+      "hummocky": 0.14646464646464646,
+      "lakes_seas": 0.5,
+      "labyrinth": 0.2802547770700637,
+      "craters": 0.0
+    },
+    "per_class_f1": {
+      "plains": 0.8179611650485437,
+      "dunes": 0.2463768115942029,
+      "hummocky": 0.2555066079295154,
+      "lakes_seas": 0.6666666666666666,
+      "labyrinth": 0.43781094527363185,
+      "craters": 0.0
+    },
+    "per_class_precision": {
+      "plains": 0.8055776892430279,
+      "dunes": 0.25757575757575757,
+      "hummocky": 0.3670886075949367,
+      "lakes_seas": 0.6031746031746031,
+      "labyrinth": 0.36666666666666664,
+      "craters": 0.0
+    },
+    "per_class_recall": {
+      "plains": 0.8307313064913723,
+      "dunes": 0.2361111111111111,
+      "hummocky": 0.19594594594594594,
+      "lakes_seas": 0.7450980392156863,
+      "labyrinth": 0.5432098765432098,
+      "craters": 0.0
+    },
+    "confusion_matrix": [
+      [
+        1011,
+        80,
+        41,
+        18,
+        67,
+        0
+      ],
+      [
+        98,
+        34,
+        5,
+        4,
+        3,
+        0
+      ],
+      [
+        98,
+        12,
+        29,
+        3,
+        6,
+        0
+      ],
+      [
+        11,
+        2,
+        0,
+        38,
+        0,
+        0
+      ],
+      [
+        33,
+        2,
+        2,
+        0,
+        44,
+        0
+      ],
+      [
+        4,
+        2,
+        2,
+        0,
+        0,
+        0
+      ]
+    ]
+  }
+}
