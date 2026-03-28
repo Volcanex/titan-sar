@@ -50,17 +50,17 @@ class TitanDataset(torch.utils.data.Dataset):
 
 
 # ── Loss functions ──────────────────────────────────────────────────────
-def get_loss(loss_name, class_weights=None, device="cuda"):
+def get_loss(loss_name, class_weights=None, device="cuda", num_classes=6):
     if loss_name == "focal":
-        return smp.losses.FocalLoss(mode="multiclass")
+        return smp.losses.FocalLoss(mode="multiclass", ignore_index=255)
     elif loss_name == "dice":
-        return smp.losses.DiceLoss(mode="multiclass")
+        return smp.losses.DiceLoss(mode="multiclass", ignore_index=255)
     elif loss_name == "ce":
         w = torch.tensor(class_weights, dtype=torch.float32).to(device) if class_weights else None
         return nn.CrossEntropyLoss(weight=w, ignore_index=255)
     elif loss_name == "focal+dice":
-        focal = smp.losses.FocalLoss(mode="multiclass")
-        dice = smp.losses.DiceLoss(mode="multiclass")
+        focal = smp.losses.FocalLoss(mode="multiclass", ignore_index=255)
+        dice = smp.losses.DiceLoss(mode="multiclass", ignore_index=255)
 
         class CombinedLoss(nn.Module):
             def __init__(self):

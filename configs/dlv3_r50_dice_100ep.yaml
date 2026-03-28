@@ -1,0 +1,16 @@
+architecture: DeepLabV3Plus
+encoder: resnet50
+encoder_weights: imagenet
+in_channels: 1
+classes: 6
+lr: 1.0e-3
+batch_size: 16
+epochs: 100
+loss: dice
+optimizer: adamw
+scheduler: cosine
+augmentations:
+  - hflip
+  - vflip
+  - rotate90
+  - gaussian_noise
