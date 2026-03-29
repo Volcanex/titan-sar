@@ -19,9 +19,19 @@ PREDICTIONS_DIR = DATA_DIR / "predictions"
 MODELS_DIR = PROJECT_ROOT / "models"
 FIGURES_DIR = PROJECT_ROOT / "figures"
 CONFIGS_DIR = PROJECT_ROOT / "configs"
+NLDSAR_DIR = RAW_DIR / "nldsar"
 
 for _d in [RAW_DIR, PROCESSED_DIR, SPLITS_DIR, PREDICTIONS_DIR, MODELS_DIR, FIGURES_DIR]:
     _d.mkdir(parents=True, exist_ok=True)
+
+# ── Global normalisation stats ────────────────────────────────────────────
+SAR_GLOBAL_MEAN = 0.5946
+SAR_GLOBAL_STD = 0.2249
+NLDSAR_GLOBAL_MEAN = 0.2671
+NLDSAR_GLOBAL_STD = 0.2348
+# Default (SAR) — kept for backward compat
+GLOBAL_MEAN = SAR_GLOBAL_MEAN
+GLOBAL_STD = SAR_GLOBAL_STD
 
 # ── Logging ────────────────────────────────────────────────────────────────
 def get_logger(name: str, level=logging.INFO) -> logging.Logger:

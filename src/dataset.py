@@ -5,7 +5,7 @@ from pathlib import Path
 
 import numpy as np
 
-from .utils import PROCESSED_DIR, SPLITS_DIR, NUM_CLASSES
+from .utils import PROCESSED_DIR, SPLITS_DIR, NUM_CLASSES, GLOBAL_MEAN, GLOBAL_STD
 
 # Conditional torch import — not needed for CPU-only notebooks
 try:
@@ -35,6 +35,8 @@ class TitanSARDataset(Dataset):
         Albumentations or custom transform applied to (image, mask) pairs.
     use_nldsar : bool
         If True, load from nldsar_tiles/ instead of sar_tiles/.
+    global_normalize : bool
+        If True (default), apply global mean/std normalization after loading.
     """
 
     def __init__(
@@ -45,12 +47,14 @@ class TitanSARDataset(Dataset):
         label_dir=None,
         transform=None,
         use_nldsar=False,
+        global_normalize=True,
     ):
         if not HAS_TORCH:
             raise ImportError("PyTorch is required for TitanSARDataset")
 
         self.split = split
         self.transform = transform
+        self.global_normalize = global_normalize
 
         split_file = Path(split_file or SPLITS_DIR / "split_v1.json")
         with open(split_file) as f:
@@ -71,6 +75,9 @@ class TitanSARDataset(Dataset):
         tid = self.tile_ids[idx]
         sar = np.load(self.sar_dir / f"{tid}.npy").astype(np.float32)
         label = np.load(self.label_dir / f"{tid}.npy").astype(np.int64)
+
+        if self.global_normalize:
+            sar = (sar - GLOBAL_MEAN) / GLOBAL_STD
 
         if self.transform is not None:
             transformed = self.transform(image=sar, mask=label)

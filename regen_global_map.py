@@ -40,7 +40,10 @@ for idx, row in tile_df.iterrows():
     r = int(row['row'])
     c = int(row['col'])
 
-    sar = np.load(SAR_TILES_DIR / f"{tid}.npy")
+    sar = np.load(SAR_TILES_DIR / f"{tid}.npy").astype(np.float32)
+    # Global normalization (must match training)
+    SAR_MEAN, SAR_STD = 0.5946, 0.2249
+    sar = (sar - SAR_MEAN) / SAR_STD
 
     with torch.no_grad():
         x = torch.from_numpy(sar).float().unsqueeze(0).unsqueeze(0).expand(1, 3, -1, -1)

@@ -17,18 +17,53 @@ import albumentations as A
 
 # ── Dataset ─────────────────────────────────────────────────────────────
 class TitanDataset(torch.utils.data.Dataset):
-    def __init__(self, tile_ids, sar_dir, label_dir, transform=None):
-        self.tile_ids = sorted(tile_ids)
+    # Normalization stats computed from full tile sets
+    NORM_STATS = {
+        "sar_tiles":    (0.5946, 0.2249),
+        "nldsar_tiles": (0.2671, 0.2348),
+    }
+
+    def __init__(self, tile_ids, sar_dir, label_dir, transform=None,
+                 nldsar_dir=None):
+        """
+        If nldsar_dir is given, prefer NLDSAR tiles where available,
+        fall back to sar_dir otherwise.
+        """
         self.sar_dir = Path(sar_dir)
         self.label_dir = Path(label_dir)
+        self.nldsar_dir = Path(nldsar_dir) if nldsar_dir else None
         self.transform = transform
+
+        # Determine per-tile source (NLDSAR preferred, SAR fallback)
+        self.tile_ids = []
+        self.tile_sources = {}  # tid -> ("sar" | "nldsar")
+        for tid in sorted(tile_ids):
+            if self.nldsar_dir and (self.nldsar_dir / f"{tid}.npy").exists():
+                self.tile_ids.append(tid)
+                self.tile_sources[tid] = "nldsar"
+            elif (self.sar_dir / f"{tid}.npy").exists():
+                self.tile_ids.append(tid)
+                self.tile_sources[tid] = "sar"
+
+        # Stats lookup
+        sar_dir_name = Path(sar_dir).name
+        self.sar_mean, self.sar_std = self.NORM_STATS.get(sar_dir_name, (0.5946, 0.2249))
+        self.nldsar_mean, self.nldsar_std = self.NORM_STATS.get("nldsar_tiles", (0.2671, 0.2348))
 
     def __len__(self):
         return len(self.tile_ids)
 
     def __getitem__(self, idx):
         tid = self.tile_ids[idx]
-        sar = np.load(self.sar_dir / f"{tid}.npy").astype(np.float32)
+        source = self.tile_sources[tid]
+
+        if source == "nldsar":
+            sar = np.load(self.nldsar_dir / f"{tid}.npy").astype(np.float32)
+            sar = (sar - self.nldsar_mean) / self.nldsar_std
+        else:
+            sar = np.load(self.sar_dir / f"{tid}.npy").astype(np.float32)
+            sar = (sar - self.sar_mean) / self.sar_std
+
         label = np.load(self.label_dir / f"{tid}.npy").astype(np.int64)
 
         if self.transform:
@@ -151,6 +186,8 @@ def main():
                         help="Freeze encoder weights (linear probing)")
     parser.add_argument("--sar-dir-name", type=str, default="sar_tiles",
                         help="Subdirectory name for SAR tiles (e.g. 'nldsar_tiles')")
+    parser.add_argument("--nldsar", action="store_true",
+                        help="Use NLDSAR tiles where available, fall back to SAR")
     args = parser.parse_args()
 
     with open(args.config) as f:
@@ -193,9 +230,18 @@ def main():
         A.GaussNoise(p=0.3),
     ])
 
-    train_ds = TitanDataset(train_ids, sar_dir, label_dir, transform=train_aug)
-    val_ds = TitanDataset(val_ids, sar_dir, label_dir)
-    test_ds = TitanDataset(test_ids, sar_dir, label_dir)
+    nldsar_dir = data_dir / "processed" / "nldsar_tiles" if args.nldsar else None
+    if nldsar_dir:
+        print(f"NLDSAR dir: {nldsar_dir}")
+
+    train_ds = TitanDataset(train_ids, sar_dir, label_dir, transform=train_aug,
+                            nldsar_dir=nldsar_dir)
+    val_ds = TitanDataset(val_ids, sar_dir, label_dir, nldsar_dir=nldsar_dir)
+    test_ds = TitanDataset(test_ids, sar_dir, label_dir, nldsar_dir=nldsar_dir)
+
+    if nldsar_dir:
+        nldsar_count = sum(1 for v in train_ds.tile_sources.values() if v == "nldsar")
+        print(f"  Train: {nldsar_count}/{len(train_ds)} tiles from NLDSAR")
 
     train_loader = DataLoader(train_ds, batch_size=cfg["batch_size"], shuffle=True,
                               num_workers=4, pin_memory=True, drop_last=True)
@@ -289,6 +335,7 @@ def main():
 
     # Training
     best_val_iou = 0
+    start_epoch = 0
     models_dir = Path("models")
     models_dir.mkdir(exist_ok=True)
     predictions_dir = Path("data/predictions")
@@ -296,7 +343,21 @@ def main():
 
     epoch_log = []
 
-    for epoch in range(cfg["epochs"]):
+    # Resume from checkpoint if available
+    ckpt_path = models_dir / f"{run_name}_checkpoint.pth"
+    if ckpt_path.exists():
+        print(f"Resuming from checkpoint: {ckpt_path}")
+        ckpt = torch.load(ckpt_path, map_location=device, weights_only=False)
+        model.load_state_dict(ckpt["model"])
+        optimizer.load_state_dict(ckpt["optimizer"])
+        if scheduler and "scheduler" in ckpt:
+            scheduler.load_state_dict(ckpt["scheduler"])
+        start_epoch = ckpt["epoch"]
+        best_val_iou = ckpt.get("best_val_iou", 0)
+        epoch_log = ckpt.get("epoch_log", [])
+        print(f"  Resumed at epoch {start_epoch}, best mIoU={best_val_iou:.4f}")
+
+    for epoch in range(start_epoch, cfg["epochs"]):
         t0 = time.time()
         train_loss = train_one_epoch(model, train_loader, criterion, optimizer, device)
         val_loss, val_iou, val_cls_iou, _ = evaluate(model, val_loader, criterion, device, cfg["classes"])
@@ -329,6 +390,18 @@ def main():
             best_val_iou = val_iou
             torch.save(model.state_dict(), models_dir / f"{run_name}_best.pth")
             print(f"  -> New best model saved (mIoU={val_iou:.4f})")
+
+        # Checkpoint every 10 epochs (full state for resume)
+        if (epoch + 1) % 10 == 0:
+            torch.save({
+                "epoch": epoch + 1,
+                "model": model.state_dict(),
+                "optimizer": optimizer.state_dict(),
+                "scheduler": scheduler.state_dict() if scheduler else None,
+                "best_val_iou": best_val_iou,
+                "epoch_log": epoch_log,
+            }, models_dir / f"{run_name}_checkpoint.pth")
+            print(f"  -> Checkpoint saved (epoch {epoch+1})")
 
     # Final evaluation on test set
     print("\n" + "=" * 60)
