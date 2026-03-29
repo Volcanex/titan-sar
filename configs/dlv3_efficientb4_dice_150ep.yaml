@@ -1,0 +1,16 @@
+architecture: DeepLabV3Plus
+encoder: efficientnet-b4
+encoder_weights: imagenet
+in_channels: 1
+classes: 6
+lr: 5.0e-4
+batch_size: 8
+epochs: 150
+loss: dice
+optimizer: adamw
+scheduler: cosine
+augmentations:
+  - hflip
+  - vflip
+  - rotate90
+  - gaussian_noise

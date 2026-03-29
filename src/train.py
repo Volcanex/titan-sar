@@ -216,6 +216,43 @@ def main():
         classes=cfg["classes"],
     ).to(device)
 
+    # Load SSL-pretrained encoder weights if configured
+    ssl_path = cfg.get("ssl_weights_path")
+    if ssl_path and Path(ssl_path).exists():
+        print(f"Loading SSL encoder weights from {ssl_path}")
+        ssl_state = torch.load(ssl_path, map_location=device, weights_only=True)
+        # Map timm keys → smp encoder keys.  smp wraps timm models and
+        # stores them under model.encoder with a consistent prefix
+        # structure.  We try a direct load first; if that fails we
+        # do a filtered/partial load matching by suffix.
+        enc_state = model.encoder.state_dict()
+        # Build mapping: strip common timm prefixes and match to smp keys
+        mapped, skipped = 0, 0
+        new_state = {}
+        for smp_key in enc_state:
+            # smp keys look like "model.blocks.0.0.conv_pw.weight" or
+            # "conv_stem.weight" depending on version.  timm keys are
+            # the same or prefixed differently.  Try exact match first.
+            if smp_key in ssl_state:
+                new_state[smp_key] = ssl_state[smp_key]
+                mapped += 1
+            else:
+                # Try matching by the tail of the key (after first dot)
+                tail = smp_key.split(".", 1)[-1] if "." in smp_key else smp_key
+                found = False
+                for ssl_key, ssl_val in ssl_state.items():
+                    ssl_tail = ssl_key.split(".", 1)[-1] if "." in ssl_key else ssl_key
+                    if ssl_tail == tail and ssl_val.shape == enc_state[smp_key].shape:
+                        new_state[smp_key] = ssl_val
+                        mapped += 1
+                        found = True
+                        break
+                if not found:
+                    skipped += 1
+        model.encoder.load_state_dict(new_state, strict=False)
+        print(f"  SSL weights loaded: {mapped} mapped, {skipped} skipped "
+              f"(of {len(enc_state)} encoder params)")
+
     if args.freeze_encoder:
         print("FREEZING encoder weights (linear probing mode)")
         for p in model.encoder.parameters():

@@ -12,10 +12,10 @@ from src.utils import (PROCESSED_DIR, PREDICTIONS_DIR, MODELS_DIR, RAW_DIR,
                         FIGURES_DIR, TERRAIN_CLASSES, CLASS_COLORS, NUM_CLASSES,
                         write_geotiff)
 
-print("Loading DeepLabV3+...")
-model = smp.create_model("DeepLabV3Plus", encoder_name="resnet50",
+print("Loading U-Net EfficientNet-B4 (R3 best)...")
+model = smp.create_model("Unet", encoder_name="efficientnet-b4",
                          encoder_weights=None, in_channels=3, classes=6)
-state = torch.load(MODELS_DIR / "dlv3_r50_focal_best.pth", map_location="cpu", weights_only=True)
+state = torch.load(MODELS_DIR / "r3_unet_effb4_dice_best.pth", map_location="cpu", weights_only=True)
 model.load_state_dict(state)
 model.eval()
 print("Model loaded")
@@ -90,7 +90,7 @@ pred_masked = np.ma.masked_where((pred_ds == 255) | (sar_full == nodata), pred_d
 ax.imshow(pred_masked, cmap=class_cmap, vmin=0, vmax=NUM_CLASSES-1, alpha=0.5, interpolation='nearest')
 legend_patches = [mpatches.Patch(color=CLASS_COLORS[i], label=TERRAIN_CLASSES[i]) for i in range(NUM_CLASSES)]
 ax.legend(handles=legend_patches, loc='lower left', fontsize=12, framealpha=0.9)
-ax.set_title('Titan Global Terrain Classification — DeepLabV3+ (pixel-level)', fontsize=16, fontweight='bold')
+ax.set_title('Titan Global Terrain Classification — U-Net EfficientNet-B4 (mIoU 0.455)', fontsize=16, fontweight='bold')
 ax.axis('off')
 plt.tight_layout()
 plt.savefig(FIGURES_DIR / 'global_map.png', dpi=200, bbox_inches='tight', facecolor='black')
